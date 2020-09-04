@@ -1,0 +1,361 @@
+machines:
+  '1':
+    series: bionic
+    constraints: "tags=controller"
+  '2':
+    series: bionic
+    constraints: "tags=storage"
+  '3':
+    series: bionic
+    constraints: "tags=storage"
+  '4':
+    series: bionic
+    constraints: "tags=storage"
+relations:
+- - nova-ironic
+  - ironic-api
+- - ironic-conductor
+  - ironic-api
+- - neutron-ironic-agent:identity-credentials
+  - keystone
+- - neutron-ironic-agent
+  - neutron-api
+- - neutron-openvswitch
+  - neutron-api
+- - ironic-api:amqp
+  - rabbitmq-server:amqp
+- - ironic-api
+  - keystone
+- - ironic-api:shared-db
+  - mysql:shared-db
+- - ironic-conductor:amqp
+  - rabbitmq-server:amqp
+- - ironic-conductor
+  - keystone
+- - ironic-conductor:shared-db
+  - mysql:shared-db
+- - nova-ironic:amqp
+  - rabbitmq-server:amqp
+- - nova-ironic
+  - glance
+- - nova-ironic
+  - keystone
+- - nova-ironic
+  - nova-cloud-controller
+- - neutron-gateway:amqp
+  - rabbitmq-server:amqp
+- - keystone:shared-db
+  - mysql:shared-db
+- - nova-cloud-controller:identity-service
+  - keystone:identity-service
+- - glance:identity-service
+  - keystone:identity-service
+- - neutron-api:identity-service
+  - keystone:identity-service
+- - neutron-api:shared-db
+  - mysql:shared-db
+- - neutron-api:amqp
+  - rabbitmq-server:amqp
+- - neutron-gateway:neutron-plugin-api
+  - neutron-api:neutron-plugin-api
+- - glance:shared-db
+  - mysql:shared-db
+- - glance:amqp
+  - rabbitmq-server:amqp
+- - nova-cloud-controller:image-service
+  - glance:image-service
+- - nova-cloud-controller:amqp
+  - rabbitmq-server:amqp
+- - nova-cloud-controller:quantum-network-service
+  - neutron-gateway:quantum-network-service
+- - openstack-dashboard:identity-service
+  - keystone:identity-service
+- - openstack-dashboard:shared-db
+  - mysql:shared-db
+- - nova-cloud-controller:shared-db
+  - mysql:shared-db
+- - nova-cloud-controller:neutron-api
+  - neutron-api:neutron-api
+- - cinder:image-service
+  - glance:image-service
+- - cinder:amqp
+  - rabbitmq-server:amqp
+- - cinder:identity-service
+  - keystone:identity-service
+- - cinder:cinder-volume-service
+  - nova-cloud-controller:cinder-volume-service
+- - cinder:shared-db
+  - mysql:shared-db
+- - ntp:juju-info
+  - neutron-gateway
+- - ntp:juju-info
+  - neutron-gateway:juju-info
+- - placement
+  - mysql
+- - placement
+  - keystone
+- - placement
+  - nova-cloud-controller
+- - ceph-mon:client
+  - nova-ironic:ceph
+- - ceph-mon:client
+  - glance:ceph
+- - ceph-radosgw:mon
+  - ceph-mon:radosgw
+- - ceph-radosgw:identity-service
+  - keystone:identity-service
+- - ceph-osd:mon
+  - ceph-mon:osd
+- - ceph-radosgw:object-store
+  - glance
+series: bionic
+services:
+  cinder:
+    series: bionic
+    annotations:
+      gui-x: '750'
+      gui-y: '0'
+    charm: cs:cinder
+    num_units: 1
+    bindings:
+      "": management
+    options:
+      block-device: /dev/vdb
+      glance-api-version: 2
+      openstack-origin: cloud:bionic-train/proposed
+      worker-multiplier: 0.25
+    to:
+      - 1
+  ceph-radosgw:
+    annotations:
+      gui-x: '1000'
+      gui-y: '250'
+    charm: /home/cloudbase/charms/charm-ceph-radosgw
+    num_units: 1
+    bindings:
+      "": management
+    options:
+      source: cloud:bionic-train/proposed
+      namespace-tenants: True
+    series: bionic
+    to:
+      - "lxd:1"
+  ceph-mon:
+    annotations:
+      gui-x: '750'
+      gui-y: '500'
+    charm: cs:ceph-mon
+    num_units: 3
+    options:
+      expected-osd-count: 3
+      source: cloud:bionic-train/proposed
+    series: bionic
+    to:
+      - "lxd:2"
+      - "lxd:3"
+      - "lxd:4"
+  ceph-osd:
+    annotations:
+      gui-x: '1000'
+      gui-y: '500'
+    charm: cs:ceph-osd
+    num_units: 3
+    options:
+      osd-devices: /dev/vdb
+      source: cloud:bionic-train/proposed
+    series: bionic
+    to:
+      - "2"
+      - "3"
+      - "4"
+  glance:
+    annotations:
+      gui-x: '250'
+      gui-y: '0'
+    charm: /home/cloudbase/charms/charm-glance
+    series: bionic
+    num_units: 1
+    bindings:
+      "": management
+    options:
+      openstack-origin: cloud:bionic-train/proposed
+      worker-multiplier: 0.25
+    to:
+    - lxd:1
+  keystone:
+    annotations:
+      gui-x: '500'
+      gui-y: '0'
+    charm: /home/cloudbase/charms/keystone
+    num_units: 1
+    series: bionic
+    bindings:
+      "": management
+    options:
+      openstack-origin: cloud:bionic-train/proposed
+      worker-multiplier: 0.25
+    to:
+    - lxd:1
+  mysql:
+    annotations:
+      gui-x: '0'
+      gui-y: '250'
+    charm: cs:percona-cluster
+    series: bionic
+    num_units: 1
+    bindings:
+      "": management
+    options:
+      innodb-buffer-pool-size: 256M
+      max-connections: 1000
+      performance-schema: true
+    to:
+    - lxd:1
+  neutron-api:
+    annotations:
+      gui-x: '500'
+      gui-y: '500'
+    charm: /home/cloudbase/charms/neutron-api
+    num_units: 1
+    series: bionic
+    bindings:
+      "": management
+    options:
+      flat-network-providers: "physnet1 physnet2"
+      neutron-security-groups: true
+      openstack-origin: cloud:bionic-train/proposed
+      manage-neutron-plugin-legacy-mode: false
+      worker-multiplier: 0.25
+    to:
+    - lxd:1
+  neutron-gateway:
+    annotations:
+      gui-x: '0'
+      gui-y: '0'
+    charm: /home/cloudbase/charms/neutron-gateway
+    comment: SET data-port to match your environment
+    num_units: 1
+    series: bionic
+    bindings:
+      "": management
+      data: data
+    options:
+      bridge-mappings: physnet1:br-ex physnet2:br-deployment
+      data-port: br-ex:external0 br-deployment:deployment0
+      openstack-origin: cloud:bionic-train/proposed
+      enable-isolated-metadata: true
+      enable-metadata-network: true
+      worker-multiplier: 0.25
+      os-data-network: 10.11.0.0/16
+    to:
+    - 1
+  nova-cloud-controller:
+    annotations:
+      gui-x: '0'
+      gui-y: '500'
+    charm: /home/cloudbase/charms/nova-cloud-controller
+    num_units: 1
+    series: bionic
+    bindings:
+      "": management
+    options:
+      network-manager: Neutron
+      openstack-origin: cloud:bionic-train/proposed
+      worker-multiplier: 0.25
+    to:
+    - lxd:1
+  nova-ironic:
+    charm: /home/cloudbase/charms/nova-compute
+    series: bionic
+    num_units: 1
+    bindings:
+      "": management
+    options:
+      enable-live-migration: false
+      enable-resize: false
+      openstack-origin: cloud:bionic-train/proposed
+      virt-type: ironic
+    to:
+      - 'lxd:1'
+  ntp:
+    annotations:
+      gui-x: '1000'
+      gui-y: '0'
+    charm: cs:ntp
+    series: bionic
+    num_units: 0
+  openstack-dashboard:
+    annotations:
+      gui-x: '500'
+      gui-y: '-250'
+    charm: cs:openstack-dashboard
+    num_units: 1
+    series: bionic
+    bindings:
+      "": management
+    options:
+      openstack-origin: cloud:bionic-train/proposed
+    to:
+    - lxd:1
+  placement:
+    annotations:
+      gui-x: '0'
+      gui-y: '500'
+    charm: cs:placement
+    num_units: 1
+    series: bionic
+    bindings:
+      "": management
+    options:
+      openstack-origin: cloud:bionic-train/proposed
+      worker-multiplier: 0.25
+    to:
+    - lxd:1
+  rabbitmq-server:
+    annotations:
+      gui-x: '500'
+      gui-y: '250'
+    charm: cs:rabbitmq-server
+    series: bionic
+    num_units: 1
+    bindings:
+      "": management
+    to:
+    - lxd:1
+  ironic-api:
+    charm: /home/cloudbase/work/charms/build/builds/ironic-api
+    num_units: 1
+    series: bionic
+    options:
+      openstack-origin: "cloud:bionic-train/proposed"
+    bindings:
+      "": management
+    to:
+      - lxd:1
+  ironic-conductor:
+    charm: /home/cloudbase/work/charms/build/builds/ironic-conductor
+    num_units: 1
+    series: bionic
+    options:
+      openstack-origin: "cloud:bionic-train/proposed"
+      max-tftp-block-size: 1418
+      disable-secure-erase: true
+      use-ipxe: true
+      enabled-network-interfaces: "flat, noop"
+    bindings:
+      "": management
+    to:
+      - lxd:1
+  neutron-openvswitch:
+    charm: cs:neutron-openvswitch
+    num_units: 0
+    series: bionic
+    options:
+      bridge-mappings: physnet1:br-ex physnet2:br-deployment
+      data-port: br-ex:external0 br-deployment:deployment0
+  neutron-ironic-agent:
+    charm: /home/cloudbase/work/charms/build/builds/neutron-api-plugin-ironic
+    num_units: 0
+    series: bionic
+    options:
+      openstack-origin: cloud:bionic-train/proposed
