@@ -76,6 +76,15 @@ Let's break down the above command:
   * [block-device-efi](https://docs.openstack.org/diskimage-builder/latest/elements/block-device-efi/README.html) - creates a GPT partition table, suitable for booting an EFI system
   * [iscsi-boot](https://docs.openstack.org/diskimage-builder/latest/elements/iscsi-boot/README.html) - Handles configuration for the disk to be capable of serving as a remote root filesystem through iSCSI
 
+> **NOTE**: If it fails with
+>
+> ```
+> INFO diskimage_builder.block_device.utils [-] Calling [sudo kpartx -uvs /dev/loop7]
+> ERROR diskimage_builder.block_device.blockdevice [-] Create failed; rollback initiated
+> ```
+>
+> and you're running it on an Ubuntu release older than Focal (20.04), please upgrade to Focal and try again.
+
 
 ### Upload images to Glance
 
